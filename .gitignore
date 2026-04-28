@@ -1,0 +1,16 @@
+# Artefatos de compilação gerados localmente.
+build/
+*.o
+*.obj
+*.exe
+
+# Arquivos de execução que não precisam entrar no repositório.
+data/ranking.txt
+data/recordes.txt
+
+# Configurações locais de editores e sistemas operacionais.
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini
