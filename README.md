@@ -109,7 +109,7 @@ O Makefile usa, no Linux, as flags comuns:
 - `ENTER`: iniciar ou reiniciar.
 - `ESC`: voltar ao menu ou fechar no menu.
 - `Seta esquerda` e `Seta direita`: mudar de faixa.
-- `SPACE`: criar um obstáculo de teste para validar lista encadeada, colisão e alocação dinâmica.
+- Os obstáculos aparecem automaticamente em faixas aleatórias.
 
 ## Git e GitHub
 

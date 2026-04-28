@@ -22,7 +22,7 @@ void DesenharHud(const EstadoJogo *jogo)
     DrawText(TextFormat("Pontos: %d", jogo->pontuacaoAtual), 30, 30, 24, RAYWHITE);
     DrawText(TextFormat("Recorde: %d", jogo->melhorPontuacao), 30, 62, 20, LIGHTGRAY);
     DrawText(TextFormat("Obstáculos: %d", jogo->obstaculos.quantidade), 30, 90, 18, LIGHTGRAY);
-    DrawText("Setas mudam de faixa | SPACE cria obstáculo de teste", 250, 650, 18, LIGHTGRAY);
+    DrawText("Setas mudam de faixa | Obstáculos aparecem sozinhos", 230, 650, 18, LIGHTGRAY);
 }
 
 void DesenharTelaGameOver(const EstadoJogo *jogo)

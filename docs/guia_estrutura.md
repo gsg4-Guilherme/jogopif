@@ -39,7 +39,6 @@ Arquivos principais:
 
 Tarefas sugeridas:
 
-- Trocar o `SPACE` por geração automática de obstáculos.
 - Aumentar velocidade e frequência com o tempo.
 - Ajustar colisão, tamanhos e posições para o jogo ficar justo.
 
@@ -71,7 +70,7 @@ Tarefas sugeridas:
 ## Ordem recomendada para continuar
 
 1. Compilar a base com Raylib instalada.
-2. Fazer o Dev 2 trocar `SPACE` por geração automática.
+2. Ajustar o balanceamento da geração automática de obstáculos.
 3. Fazer o Dev 3 melhorar ranking e eventos.
 4. Fazer o Dev 1 revisar troca de telas e pausa.
 5. Gravar um vídeo curto mostrando compilação e execução.
