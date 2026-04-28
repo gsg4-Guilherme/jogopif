@@ -1,5 +1,6 @@
 #include "engine.h"
 
+#include "interface.h"
 #include "jogo.h"
 #include "raylib.h"
 
@@ -55,16 +56,12 @@ int RodarEngine(ConfiguracaoJanela configuracao)
         ClearBackground((Color){ 22, 25, 35, 255 });
 
         if (telaAtual == TELA_MENU) {
-            DrawText("Pânico na Agamenon", 250, 230, 38, RAYWHITE);
-            DrawText("Pressione ENTER para iniciar", 285, 300, 22, LIGHTGRAY);
-            DrawText("ESC fecha a janela", 345, 335, 18, GRAY);
+            DesenharTelaMenu();
         } else {
             DesenharJogo(&jogo);
 
             if (telaAtual == TELA_GAME_OVER) {
-                DrawRectangle(0, 0, configuracao.largura, configuracao.altura, (Color){ 0, 0, 0, 150 });
-                DrawText("Fim de jogo", 335, 270, 40, RAYWHITE);
-                DrawText("Pressione ENTER para tentar de novo", 255, 330, 22, LIGHTGRAY);
+                DesenharTelaGameOver(&jogo);
             }
         }
 

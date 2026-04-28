@@ -3,16 +3,13 @@
 #include <string.h>
 
 #include "config.h"
+#include "interface.h"
+#include "jogador.h"
+#include "obstaculos.h"
+#include "pista.h"
+#include "pontuacao.h"
 #include "raylib.h"
-
-static float CalcularCentroFaixa(int faixa)
-{
-    float larguraPista = 450.0f;
-    float margemEsquerda = (LARGURA_JANELA - larguraPista) / 2.0f;
-    float larguraFaixa = larguraPista / QUANTIDADE_FAIXAS;
-
-    return margemEsquerda + (larguraFaixa * faixa) + (larguraFaixa / 2.0f);
-}
+#include "ranking.h"
 
 void InicializarJogo(EstadoJogo *jogo)
 {
@@ -21,6 +18,7 @@ void InicializarJogo(EstadoJogo *jogo)
     }
 
     memset(jogo, 0, sizeof(*jogo));
+    InicializarListaObstaculos(&jogo->obstaculos);
     ReiniciarJogo(jogo);
 }
 
@@ -30,21 +28,13 @@ void ReiniciarJogo(EstadoJogo *jogo)
         return;
     }
 
-    // Este estado inicial será distribuído nos módulos de jogador, pista e pontuação.
-    jogo->jogador.faixaAtual = 1;
-    jogo->jogador.largura = 54.0f;
-    jogo->jogador.altura = 86.0f;
-    jogo->jogador.posicaoX = CalcularCentroFaixa(jogo->jogador.faixaAtual) - (jogo->jogador.largura / 2.0f);
-    jogo->jogador.posicaoY = ALTURA_JANELA - 130.0f;
-    jogo->jogador.caixaColisao = (Rectangle){
-        jogo->jogador.posicaoX,
-        jogo->jogador.posicaoY,
-        jogo->jogador.largura,
-        jogo->jogador.altura
-    };
+    LiberarObstaculos(&jogo->obstaculos);
+    InicializarListaObstaculos(&jogo->obstaculos);
+    InicializarJogador(&jogo->jogador);
+    InicializarPista(jogo->pistaLogica);
+    InicializarPontuacao(jogo);
 
-    jogo->pontuacaoAtual = 0;
-    jogo->tempoSobrevivencia = 0.0f;
+    jogo->tempoGerarObstaculo = 0.0f;
     jogo->intervaloObstaculo = 1.5f;
     jogo->velocidadeBase = 180.0f;
     jogo->jogoAtivo = true;
@@ -56,21 +46,22 @@ void AtualizarJogo(EstadoJogo *jogo, float delta)
         return;
     }
 
-    // TODO: Dev 2 deverá trocar este movimento simples por uma função em jogador.c.
-    if (IsKeyPressed(KEY_LEFT) && jogo->jogador.faixaAtual > 0) {
-        jogo->jogador.faixaAtual--;
+    AtualizarJogador(&jogo->jogador, delta);
+    AtualizarPontuacao(jogo, delta);
+
+    // TODO: Dev 2 pode trocar o SPACE por geração temporizada baseada em dificuldade.
+    if (IsKeyPressed(KEY_SPACE)) {
+        int faixa = GetRandomValue(0, QUANTIDADE_FAIXAS - 1);
+        AdicionarObstaculo(&jogo->obstaculos, faixa, jogo->velocidadeBase);
     }
 
-    if (IsKeyPressed(KEY_RIGHT) && jogo->jogador.faixaAtual < QUANTIDADE_FAIXAS - 1) {
-        jogo->jogador.faixaAtual++;
+    AtualizarObstaculos(&jogo->obstaculos, delta);
+    AtualizarPista(jogo->pistaLogica, &jogo->jogador, &jogo->obstaculos);
+
+    if (VerificarColisaoJogadorObstaculos(&jogo->jogador, &jogo->obstaculos)) {
+        jogo->jogoAtivo = false;
+        SalvarPontuacaoSeRecorde(CAMINHO_RANKING, jogo->pontuacaoAtual);
     }
-
-    jogo->jogador.posicaoX = CalcularCentroFaixa(jogo->jogador.faixaAtual) - (jogo->jogador.largura / 2.0f);
-    jogo->jogador.caixaColisao.x = jogo->jogador.posicaoX;
-
-    // TODO: Dev 3 deverá mover a regra de pontuação para pontuacao.c.
-    jogo->tempoSobrevivencia += delta;
-    jogo->pontuacaoAtual = (int)(jogo->tempoSobrevivencia * 10.0f);
 }
 
 void DesenharJogo(const EstadoJogo *jogo)
@@ -79,24 +70,18 @@ void DesenharJogo(const EstadoJogo *jogo)
         return;
     }
 
-    float larguraPista = 450.0f;
-    float margemEsquerda = (LARGURA_JANELA - larguraPista) / 2.0f;
-    float larguraFaixa = larguraPista / QUANTIDADE_FAIXAS;
-
-    DrawRectangle((int)margemEsquerda, 0, (int)larguraPista, ALTURA_JANELA, (Color){ 42, 45, 52, 255 });
-
-    for (int faixa = 1; faixa < QUANTIDADE_FAIXAS; faixa++) {
-        int x = (int)(margemEsquerda + (larguraFaixa * faixa));
-        DrawLine(x, 0, x, ALTURA_JANELA, YELLOW);
-    }
-
-    DrawRectangleRounded(jogo->jogador.caixaColisao, 0.18f, 6, (Color){ 40, 130, 220, 255 });
-    DrawText("CARRO", (int)jogo->jogador.posicaoX + 2, (int)jogo->jogador.posicaoY + 32, 14, RAYWHITE);
-    DrawText(TextFormat("Pontos: %d", jogo->pontuacaoAtual), 30, 30, 24, RAYWHITE);
+    DesenharPista(jogo->pistaLogica);
+    DesenharObstaculos(&jogo->obstaculos);
+    DesenharJogador(&jogo->jogador);
+    DesenharEventos(jogo);
+    DesenharHud(jogo);
 }
 
 void FinalizarJogo(EstadoJogo *jogo)
 {
-    // Ainda não há memória dinâmica nesta etapa. A lista encadeada será liberada no próximo commit.
-    (void)jogo;
+    if (jogo == NULL) {
+        return;
+    }
+
+    LiberarObstaculos(&jogo->obstaculos);
 }
