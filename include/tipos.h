@@ -1,0 +1,74 @@
+#ifndef TIPOS_H
+#define TIPOS_H
+
+#include <stdbool.h>
+
+#include "config.h"
+#include "raylib.h"
+
+// Telas principais do jogo. A engine usa este enum para decidir o que atualizar e desenhar.
+typedef enum TelaAtual {
+    TELA_MENU = 0,
+    TELA_JOGANDO,
+    TELA_GAME_OVER
+} TelaAtual;
+
+// Configuração da janela passada do main para a engine.
+typedef struct ConfiguracaoJanela {
+    int largura;
+    int altura;
+    int fps;
+    const char *titulo;
+} ConfiguracaoJanela;
+
+// Representa o carro do jogador dentro da pista.
+typedef struct Jogador {
+    int faixaAtual;
+    float posicaoX;
+    float posicaoY;
+    float largura;
+    float altura;
+    float velocidadeLateral;
+    Rectangle caixaColisao;
+} Jogador;
+
+// Cada obstáculo será um nó da lista encadeada.
+typedef struct Obstaculo {
+    int faixa;
+    float posicaoY;
+    float velocidade;
+    float largura;
+    float altura;
+    Rectangle caixaColisao;
+    struct Obstaculo *proximo;
+} Obstaculo;
+
+// Lista encadeada de obstáculos ativos na tela.
+typedef struct ListaObstaculos {
+    Obstaculo *inicio;
+    int quantidade;
+} ListaObstaculos;
+
+// Registro simples para leitura e escrita de pontuação.
+typedef struct RegistroPontuacao {
+    char nome[32];
+    int pontos;
+} RegistroPontuacao;
+
+// Estado completo que circula entre engine, jogabilidade, interface e dados.
+typedef struct EstadoJogo {
+    Jogador jogador;
+    ListaObstaculos obstaculos;
+    int pistaLogica[LINHAS_PISTA][COLUNAS_PISTA];
+    int pontuacaoAtual;
+    int melhorPontuacao;
+    float tempoSobrevivencia;
+    float tempoGerarObstaculo;
+    float intervaloObstaculo;
+    float velocidadeBase;
+    bool jogoAtivo;
+    bool chuvaAtiva;
+    bool engarrafamentoAtivo;
+} EstadoJogo;
+
+#endif
