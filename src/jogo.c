@@ -24,9 +24,21 @@ static float CalcularProximoIntervaloObstaculo(const EstadoJogo *jogo)
     return intervaloBase + variacaoAleatoria;
 }
 
+static TipoObstaculo SortearTipoObstaculo(const EstadoJogo *jogo)
+{
+    int chanceOnibus = (jogo != NULL && jogo->engarrafamentoAtivo) ? 45 : 20;
+
+    if (GetRandomValue(1, 100) <= chanceOnibus) {
+        return OBSTACULO_ONIBUS;
+    }
+
+    return OBSTACULO_CARRO;
+}
+
 static void GerarObstaculoAleatorio(EstadoJogo *jogo)
 {
     int faixa = GetRandomValue(0, QUANTIDADE_FAIXAS - 1);
+    TipoObstaculo tipo = SortearTipoObstaculo(jogo);
     float aumentoPorTempo = jogo->tempoSobrevivencia * 5.0f;
     float variacaoVelocidade = (float)GetRandomValue(-20, 35);
 
@@ -34,7 +46,7 @@ static void GerarObstaculoAleatorio(EstadoJogo *jogo)
         aumentoPorTempo = 220.0f;
     }
 
-    AdicionarObstaculo(&jogo->obstaculos, faixa, jogo->velocidadeBase + aumentoPorTempo + variacaoVelocidade);
+    AdicionarObstaculo(&jogo->obstaculos, faixa, jogo->velocidadeBase + aumentoPorTempo + variacaoVelocidade, tipo);
 }
 
 static void AtualizarGeracaoObstaculos(EstadoJogo *jogo, float delta)
@@ -48,6 +60,21 @@ static void AtualizarGeracaoObstaculos(EstadoJogo *jogo, float delta)
     }
 }
 
+static void AtualizarDeslocamentoCenario(EstadoJogo *jogo, float delta)
+{
+    float aumentoPorTempo = jogo->tempoSobrevivencia * 5.0f;
+
+    if (aumentoPorTempo > 220.0f) {
+        aumentoPorTempo = 220.0f;
+    }
+
+    jogo->deslocamentoCenario += (jogo->velocidadeBase + aumentoPorTempo) * delta;
+
+    while (jogo->deslocamentoCenario >= 240.0f) {
+        jogo->deslocamentoCenario -= 240.0f;
+    }
+}
+
 void InicializarJogo(EstadoJogo *jogo)
 {
     if (jogo == NULL) {
@@ -56,6 +83,8 @@ void InicializarJogo(EstadoJogo *jogo)
 
     SetRandomSeed((unsigned int)time(NULL));
     memset(jogo, 0, sizeof(*jogo));
+    CarregarTexturaJogador();
+    CarregarTexturasObstaculos();
     InicializarListaObstaculos(&jogo->obstaculos);
     ReiniciarJogo(jogo);
 }
@@ -75,6 +104,7 @@ void ReiniciarJogo(EstadoJogo *jogo)
     jogo->tempoGerarObstaculo = 0.0f;
     jogo->intervaloObstaculo = 1.0f;
     jogo->velocidadeBase = 190.0f;
+    jogo->deslocamentoCenario = 0.0f;
     jogo->jogoAtivo = true;
 }
 
@@ -86,6 +116,7 @@ void AtualizarJogo(EstadoJogo *jogo, float delta)
 
     AtualizarJogador(&jogo->jogador, delta);
     AtualizarPontuacao(jogo, delta);
+    AtualizarDeslocamentoCenario(jogo, delta);
     AtualizarGeracaoObstaculos(jogo, delta);
 
     AtualizarObstaculos(&jogo->obstaculos, delta);
@@ -103,7 +134,7 @@ void DesenharJogo(const EstadoJogo *jogo)
         return;
     }
 
-    DesenharPista(jogo->pistaLogica);
+    DesenharPista(jogo->pistaLogica, jogo->deslocamentoCenario);
     DesenharObstaculos(&jogo->obstaculos);
     DesenharJogador(&jogo->jogador);
     DesenharEventos(jogo);
@@ -117,4 +148,6 @@ void FinalizarJogo(EstadoJogo *jogo)
     }
 
     LiberarObstaculos(&jogo->obstaculos);
+    LiberarTexturasObstaculos();
+    LiberarTexturaJogador();
 }

@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "config.h"
-#include "raylib.h"
+#include "raylib.h" // colisao
 
 // Telas principais do jogo. A engine usa este enum para decidir o que atualizar e desenhar.
 typedef enum TelaAtual {
@@ -20,6 +20,11 @@ typedef struct ConfiguracaoJanela {
     int fps;
     const char *titulo;
 } ConfiguracaoJanela;
+
+typedef enum TipoObstaculo {
+    OBSTACULO_CARRO = 0,
+    OBSTACULO_ONIBUS
+} TipoObstaculo;
 
 // Representa o carro do jogador dentro da pista.
 typedef struct Jogador {
@@ -41,6 +46,8 @@ typedef struct Obstaculo {
     float altura;
     Rectangle caixaColisao;
     struct Obstaculo *proximo;
+    TipoObstaculo tipo;
+    int indiceSprite;
 } Obstaculo;
 
 // Lista encadeada de obstáculos ativos na tela.
@@ -66,9 +73,12 @@ typedef struct EstadoJogo {
     float tempoGerarObstaculo;
     float intervaloObstaculo;
     float velocidadeBase;
+    float deslocamentoCenario;
     bool jogoAtivo;
     bool chuvaAtiva;
     bool engarrafamentoAtivo;
 } EstadoJogo;
 
 #endif
+
+//aqui tem as structs e enum ,

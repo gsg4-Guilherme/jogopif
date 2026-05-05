@@ -1,4 +1,4 @@
-CC ?= gcc
+CC := gcc
 
 SRC_DIR := src
 INC_DIR := include
@@ -6,6 +6,7 @@ BUILD_DIR := build
 TARGET_NAME := jogo
 
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
+HEADERS := $(wildcard $(INC_DIR)/*.h)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 
 ifeq ($(OS),Windows_NT)
@@ -35,7 +36,7 @@ dirs:
 $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: all

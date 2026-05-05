@@ -13,7 +13,7 @@ void AtualizarPista(
     const ListaObstaculos *obstaculos
 );
 
-// Desenha a pista usando a matriz como referência didática.
-void DesenharPista(const int pistaLogica[LINHAS_PISTA][COLUNAS_PISTA]);
+// Desenha a pista e o ambiente lateral com deslocamento de movimento.
+void DesenharPista(const int pistaLogica[LINHAS_PISTA][COLUNAS_PISTA], float deslocamentoCenario);
 
 #endif
