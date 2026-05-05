@@ -69,10 +69,6 @@ static void AtualizarDeslocamentoCenario(EstadoJogo *jogo, float delta)
     }
 
     jogo->deslocamentoCenario += (jogo->velocidadeBase + aumentoPorTempo) * delta;
-
-    while (jogo->deslocamentoCenario >= 240.0f) {
-        jogo->deslocamentoCenario -= 240.0f;
-    }
 }
 
 void InicializarJogo(EstadoJogo *jogo)
