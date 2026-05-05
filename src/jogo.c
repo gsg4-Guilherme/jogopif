@@ -12,16 +12,38 @@
 #include "raylib.h"
 #include "ranking.h"
 
+static const float MULTIPLICADOR_INTERVALO_ENGARRAFAMENTO = 0.70f;
+static const float MULTIPLICADOR_VELOCIDADE_CHUVA = 1.25f;
+static const float INTERVALO_MINIMO_NORMAL = 0.45f;
+static const float INTERVALO_MINIMO_ENGARRAFAMENTO = 0.35f;
+
+static float ObterMultiplicadorVelocidadeChuva(const EstadoJogo *jogo)
+{
+    return (jogo != NULL && jogo->chuvaAtiva) ? MULTIPLICADOR_VELOCIDADE_CHUVA : 1.0f;
+}
+
 static float CalcularProximoIntervaloObstaculo(const EstadoJogo *jogo)
 {
     float intervaloBase = 1.35f - (jogo->tempoSobrevivencia * 0.015f);
     float variacaoAleatoria = (float)GetRandomValue(0, 30) / 100.0f;
+    float intervaloMinimo = INTERVALO_MINIMO_NORMAL;
 
-    if (intervaloBase < 0.45f) {
-        intervaloBase = 0.45f;
+    if (intervaloBase < INTERVALO_MINIMO_NORMAL) {
+        intervaloBase = INTERVALO_MINIMO_NORMAL;
     }
 
-    return intervaloBase + variacaoAleatoria;
+    float intervalo = intervaloBase + variacaoAleatoria;
+
+    if (jogo->engarrafamentoAtivo) {
+        intervalo *= MULTIPLICADOR_INTERVALO_ENGARRAFAMENTO;
+        intervaloMinimo = INTERVALO_MINIMO_ENGARRAFAMENTO;
+    }
+
+    if (intervalo < intervaloMinimo) {
+        intervalo = intervaloMinimo;
+    }
+
+    return intervalo;
 }
 
 static TipoObstaculo SortearTipoObstaculo(const EstadoJogo *jogo)
@@ -68,7 +90,8 @@ static void AtualizarDeslocamentoCenario(EstadoJogo *jogo, float delta)
         aumentoPorTempo = 220.0f;
     }
 
-    jogo->deslocamentoCenario += (jogo->velocidadeBase + aumentoPorTempo) * delta;
+    jogo->deslocamentoCenario += (jogo->velocidadeBase + aumentoPorTempo) *
+        ObterMultiplicadorVelocidadeChuva(jogo) * delta;
 }
 
 void InicializarJogo(EstadoJogo *jogo)
@@ -115,7 +138,7 @@ void AtualizarJogo(EstadoJogo *jogo, float delta)
     AtualizarDeslocamentoCenario(jogo, delta);
     AtualizarGeracaoObstaculos(jogo, delta);
 
-    AtualizarObstaculos(&jogo->obstaculos, delta);
+    AtualizarObstaculos(&jogo->obstaculos, delta * ObterMultiplicadorVelocidadeChuva(jogo));
     AtualizarPista(jogo->pistaLogica, &jogo->jogador, &jogo->obstaculos);
 
     if (VerificarColisaoJogadorObstaculos(&jogo->jogador, &jogo->obstaculos)) {
