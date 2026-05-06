@@ -5,6 +5,41 @@
 #include "config.h"
 #include "raylib.h"
 
+static void DesenharFiltroChuva(void)
+{
+    DrawRectangle(0, 0, LARGURA_JANELA, ALTURA_JANELA, (Color){ 0, 0, 0, 68 });
+}
+
+static void DesenharGotasChuva(void)
+{
+    const int quantidadeGotas = 76;
+    const int cicloVertical = ALTURA_JANELA + 160;
+    const float larguraGota = 3.0f;
+    const float alturaGota = 34.0f;
+    const float velocidadeChuva = 520.0f;
+    const Color corGota = (Color){ 150, 205, 230, 120 };
+    int deslocamento = (int)((long long)(GetTime() * velocidadeChuva) % cicloVertical);
+
+    for (int indice = 0; indice < quantidadeGotas; indice++) {
+        int x = (indice * 97) % (LARGURA_JANELA + 180) - 90;
+        int y = (indice * 53 + deslocamento) % cicloVertical - 120;
+        Rectangle gota = {
+            (float)x,
+            (float)y,
+            larguraGota,
+            alturaGota
+        };
+
+        DrawRectanglePro(gota, (Vector2){ larguraGota / 2.0f, 0.0f }, -18.0f, corGota);
+    }
+}
+
+static void DesenharEfeitoChuva(void)
+{
+    DesenharFiltroChuva();
+    DesenharGotasChuva();
+}
+
 void DesenharTelaMenu(void)
 {
     DrawText("Pânico na Agamenon", 250, 220, 38, RAYWHITE);
@@ -41,8 +76,8 @@ void DesenharEventos(const EstadoJogo *jogo)
         return;
     }
 
-    // Estes indicadores são ganchos visuais; a regra definitiva fica para o Dev 3 completar.
     if (jogo->chuvaAtiva) {
+        DesenharEfeitoChuva();
         DrawText("CHUVA", 770, 30, 20, SKYBLUE);
     }
 
