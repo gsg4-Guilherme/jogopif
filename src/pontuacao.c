@@ -27,7 +27,7 @@ void AtualizarPontuacao(EstadoJogo *jogo, float delta)
     jogo->tempoSobrevivencia += delta;
     jogo->pontuacaoAtual = (int)(jogo->tempoSobrevivencia * 10.0f);
 
-    // TODO: Dev 3 pode trocar estes eventos previsíveis por eventos aleatórios balanceados.
+
     jogo->chuvaAtiva = ((int)jogo->tempoSobrevivencia % 18) >= 12;
     jogo->engarrafamentoAtivo = ((int)jogo->tempoSobrevivencia % 25) >= 20;
 }
