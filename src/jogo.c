@@ -12,10 +12,10 @@
 #include "raylib.h"
 #include "ranking.h"
 
-static const float MULTIPLICADOR_INTERVALO_ENGARRAFAMENTO = 0.70f;
+static const float MULTIPLICADOR_INTERVALO_ENGARRAFAMENTO = 0.65f;
 static const float MULTIPLICADOR_VELOCIDADE_CHUVA = 1.25f;
-static const float INTERVALO_MINIMO_NORMAL = 0.45f;
-static const float INTERVALO_MINIMO_ENGARRAFAMENTO = 0.35f;
+static const float INTERVALO_MINIMO_NORMAL = 0.32f;
+static const float INTERVALO_MINIMO_ENGARRAFAMENTO = 0.30f;
 
 static float ObterMultiplicadorVelocidadeChuva(const EstadoJogo *jogo)
 {
@@ -24,7 +24,7 @@ static float ObterMultiplicadorVelocidadeChuva(const EstadoJogo *jogo)
 
 static float CalcularProximoIntervaloObstaculo(const EstadoJogo *jogo)
 {
-    float intervaloBase = 1.35f - (jogo->tempoSobrevivencia * 0.015f);
+    float intervaloBase = 1.05f - (jogo->tempoSobrevivencia * 0.020f);
     float variacaoAleatoria = (float)GetRandomValue(0, 30) / 100.0f;
     float intervaloMinimo = INTERVALO_MINIMO_NORMAL;
 
@@ -48,7 +48,7 @@ static float CalcularProximoIntervaloObstaculo(const EstadoJogo *jogo)
 
 static TipoObstaculo SortearTipoObstaculo(const EstadoJogo *jogo)
 {
-    int chanceOnibus = (jogo != NULL && jogo->engarrafamentoAtivo) ? 45 : 20;
+    int chanceOnibus = (jogo != NULL && jogo->engarrafamentoAtivo) ? 50 : 30;
 
     if (GetRandomValue(1, 100) <= chanceOnibus) {
         return OBSTACULO_ONIBUS;
@@ -57,9 +57,26 @@ static TipoObstaculo SortearTipoObstaculo(const EstadoJogo *jogo)
     return OBSTACULO_CARRO;
 }
 
-static void GerarObstaculoAleatorio(EstadoJogo *jogo)
+static bool DeveGerarObstaculoExtra(const EstadoJogo *jogo)
 {
-    int faixa = GetRandomValue(0, QUANTIDADE_FAIXAS - 1);
+    int chanceObstaculoExtra = (jogo != NULL && jogo->engarrafamentoAtivo) ? 30 : 20;
+
+    return GetRandomValue(1, 100) <= chanceObstaculoExtra;
+}
+
+static int SortearFaixaDiferente(int faixaOriginal)
+{
+    if (QUANTIDADE_FAIXAS <= 1) {
+        return faixaOriginal;
+    }
+
+    int deslocamento = GetRandomValue(1, QUANTIDADE_FAIXAS - 1);
+
+    return (faixaOriginal + deslocamento) % QUANTIDADE_FAIXAS;
+}
+
+static void GerarObstaculoNaFaixa(EstadoJogo *jogo, int faixa)
+{
     TipoObstaculo tipo = SortearTipoObstaculo(jogo);
     float aumentoPorTempo = jogo->tempoSobrevivencia * 5.0f;
     float variacaoVelocidade = (float)GetRandomValue(-20, 35);
@@ -71,12 +88,23 @@ static void GerarObstaculoAleatorio(EstadoJogo *jogo)
     AdicionarObstaculo(&jogo->obstaculos, faixa, jogo->velocidadeBase + aumentoPorTempo + variacaoVelocidade, tipo);
 }
 
+static void GerarObstaculosAleatorios(EstadoJogo *jogo)
+{
+    int faixaPrincipal = GetRandomValue(0, QUANTIDADE_FAIXAS - 1);
+
+    GerarObstaculoNaFaixa(jogo, faixaPrincipal);
+
+    if (DeveGerarObstaculoExtra(jogo)) {
+        GerarObstaculoNaFaixa(jogo, SortearFaixaDiferente(faixaPrincipal));
+    }
+}
+
 static void AtualizarGeracaoObstaculos(EstadoJogo *jogo, float delta)
 {
     jogo->tempoGerarObstaculo += delta;
 
     if (jogo->tempoGerarObstaculo >= jogo->intervaloObstaculo) {
-        GerarObstaculoAleatorio(jogo);
+        GerarObstaculosAleatorios(jogo);
         jogo->tempoGerarObstaculo = 0.0f;
         jogo->intervaloObstaculo = CalcularProximoIntervaloObstaculo(jogo);
     }
