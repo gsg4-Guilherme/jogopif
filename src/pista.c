@@ -5,7 +5,6 @@
 #include "config.h"
 #include "raylib.h"
 
-#define LARGURA_PISTA_VISUAL 450.0f
 #define LARGURA_ACOSTAMENTO 24.0f
 #define CICLO_ARVORES 820.0f
 #define CICLO_MARCAS_ASFALTO 760.0f

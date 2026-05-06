@@ -13,7 +13,7 @@ static Texture2D texturaJogador = { 0 };
 
 float CalcularCentroFaixa(int faixa)
 {
-    float larguraPista = 450.0f;
+    float larguraPista = LARGURA_PISTA_VISUAL;
     float margemEsquerda = (LARGURA_JANELA - larguraPista) / 2.0f;
     float larguraFaixa = larguraPista / QUANTIDADE_FAIXAS;
 
@@ -43,7 +43,7 @@ void InicializarJogador(Jogador *jogador)
         return;
     }
 
-    jogador->faixaAtual = 1;
+    jogador->faixaAtual = QUANTIDADE_FAIXAS / 2;
     jogador->largura = LARGURA_SPRITE_JOGADOR;
     jogador->altura = ALTURA_SPRITE_JOGADOR;
     jogador->velocidadeLateral = 0.0f;

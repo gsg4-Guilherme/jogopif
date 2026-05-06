@@ -8,7 +8,8 @@
 #define TITULO_JANELA "Pânico na Agamenon"
 
 // Configurações da pista usadas pelos módulos de jogabilidade.
-#define QUANTIDADE_FAIXAS 3
+#define QUANTIDADE_FAIXAS 5
+#define LARGURA_PISTA_VISUAL 650.0f
 #define LINHAS_PISTA 12
 #define COLUNAS_PISTA QUANTIDADE_FAIXAS
 
