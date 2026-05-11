@@ -28,7 +28,7 @@ static const Vector2 TAMANHOS_SPRITES_CARRO[QUANTIDADE_SPRITES_CARRO] = {
 };
 
 static const Vector2 TAMANHOS_SPRITES_ONIBUS[QUANTIDADE_SPRITES_ONIBUS] = {
-    { 68.0f, 124.0f },
+    { 72.0f, 136.0f },
     { 72.0f, 136.0f }
 };
 
