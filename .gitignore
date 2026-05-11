@@ -1,5 +1,6 @@
 # Artefatos de compilação gerados localmente.
 build/
+.tools/
 *.o
 *.obj
 *.exe

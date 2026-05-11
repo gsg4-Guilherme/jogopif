@@ -11,9 +11,21 @@ OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 
 ifeq ($(OS),Windows_NT)
 	TARGET := $(BUILD_DIR)/$(TARGET_NAME).exe
-	RAYLIB_PATH ?= C:/raylib/raylib
-	CFLAGS += -std=c99 -Wall -Wextra -I$(INC_DIR) -I$(RAYLIB_PATH)/include
-	LDFLAGS += -L$(RAYLIB_PATH)/lib -lraylib -lopengl32 -lgdi32 -lwinmm
+	ifneq ($(wildcard raylib/src/raylib.h),)
+		RAYLIB_PATH ?= raylib/src
+	else
+		RAYLIB_PATH ?= C:/raylib/raylib
+	endif
+	RAYLIB_INCLUDE_PATH ?= $(RAYLIB_PATH)
+	RAYLIB_LIBRARY_PATH ?= $(RAYLIB_PATH)
+	ifeq ($(wildcard $(RAYLIB_INCLUDE_PATH)/raylib.h),)
+		RAYLIB_INCLUDE_PATH := $(RAYLIB_PATH)/include
+	endif
+	ifeq ($(wildcard $(RAYLIB_LIBRARY_PATH)/libraylib.a),)
+		RAYLIB_LIBRARY_PATH := $(RAYLIB_PATH)/lib
+	endif
+	CFLAGS += -std=c99 -Wall -Wextra -I$(INC_DIR) -I$(RAYLIB_INCLUDE_PATH)
+	LDFLAGS += -L$(RAYLIB_LIBRARY_PATH) -lraylib -lopengl32 -lgdi32 -lwinmm
 	CREATE_BUILD = powershell -NoProfile -Command "New-Item -ItemType Directory -Force '$(BUILD_DIR)' | Out-Null"
 	CLEAN_BUILD = powershell -NoProfile -Command "if (Test-Path '$(BUILD_DIR)') { Remove-Item -Recurse -Force '$(BUILD_DIR)' }"
 	RUN_TARGET = $(TARGET)

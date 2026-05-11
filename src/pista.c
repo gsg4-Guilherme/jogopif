@@ -74,7 +74,7 @@ static void DesenharArvore(float centroX, float baseY, float escala)
 static void DesenharGramado(float margemEsquerda, float larguraPista, float deslocamentoCenario)
 {
     static const int posicoesGrama[] = { 18, 47, 91, 136, 180, 711, 756, 804, 846, 879 };
-    float deslocamentoGrama = NormalizarDeslocamento(deslocamentoCenario * 0.45f, 42.0f);
+    float deslocamentoGrama = NormalizarDeslocamento(deslocamentoCenario, 42.0f);
 
     DrawRectangle(0, 0, LARGURA_JANELA, ALTURA_JANELA, (Color){ 25, 82, 52, 255 });
     DrawRectangle(0, 0, (int)margemEsquerda, ALTURA_JANELA, (Color){ 30, 92, 57, 255 });
@@ -111,7 +111,7 @@ static void DesenharArvoresLaterais(float margemEsquerda, float larguraPista, fl
         { 162.0f, 530.0f, 0.96f },
         { 122.0f, 688.0f, 1.0f }
     };
-    float deslocamentoArvore = NormalizarDeslocamento(deslocamentoCenario * 0.62f, CICLO_ARVORES);
+    float deslocamentoArvore = NormalizarDeslocamento(deslocamentoCenario, CICLO_ARVORES);
 
     for (int i = 0; i < (int)(sizeof(arvoresEsquerda) / sizeof(arvoresEsquerda[0])); i++) {
         float y = NormalizarDeslocamento(deslocamentoArvore + arvoresEsquerda[i].faseY, CICLO_ARVORES) - 70.0f;
@@ -137,7 +137,7 @@ static void DesenharAsfalto(float margemEsquerda, float larguraPista, float desl
         { 215.0f, 604.0f, 4.0f, 9.0f, { 33, 36, 42, 115 } },
         { 365.0f, 690.0f, 3.0f, 13.0f, { 56, 59, 66, 125 } }
     };
-    float deslocamentoMarcas = NormalizarDeslocamento(deslocamentoCenario * 0.58f, CICLO_MARCAS_ASFALTO);
+    float deslocamentoMarcas = NormalizarDeslocamento(deslocamentoCenario, CICLO_MARCAS_ASFALTO);
 
     DrawRectangle((int)margemEsquerda, 0, (int)larguraPista, ALTURA_JANELA, (Color){ 42, 45, 52, 255 });
     DrawRectangle((int)margemEsquerda, 0, 10, ALTURA_JANELA, (Color){ 35, 38, 44, 255 });
