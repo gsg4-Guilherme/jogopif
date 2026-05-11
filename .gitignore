@@ -1,6 +1,7 @@
 # Artefatos de compilação gerados localmente.
 build/
 .tools/
+raylib/
 *.o
 *.obj
 *.exe
