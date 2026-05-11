@@ -16,6 +16,9 @@ static const float MULTIPLICADOR_INTERVALO_ENGARRAFAMENTO = 0.65f;
 static const float MULTIPLICADOR_VELOCIDADE_CHUVA = 1.25f;
 static const float INTERVALO_MINIMO_NORMAL = 0.32f;
 static const float INTERVALO_MINIMO_ENGARRAFAMENTO = 0.30f;
+static const float DISTANCIA_MINIMA_OBSTACULO_MESMA_FAIXA = 240.0f;
+static const float LIMITE_SUPERIOR_BANDA_SPAWN = -140.0f;
+static const float LIMITE_INFERIOR_BANDA_SPAWN = 220.0f;
 
 static float ObterMultiplicadorVelocidadeChuva(const EstadoJogo *jogo)
 {
@@ -64,18 +67,117 @@ static bool DeveGerarObstaculoExtra(const EstadoJogo *jogo)
     return GetRandomValue(1, 100) <= chanceObstaculoExtra;
 }
 
-static int SortearFaixaDiferente(int faixaOriginal)
+static bool ObstaculoEstaNaBandaSpawn(const Obstaculo *obstaculo)
 {
-    if (QUANTIDADE_FAIXAS <= 1) {
-        return faixaOriginal;
-    }
-
-    int deslocamento = GetRandomValue(1, QUANTIDADE_FAIXAS - 1);
-
-    return (faixaOriginal + deslocamento) % QUANTIDADE_FAIXAS;
+    return obstaculo != NULL &&
+        obstaculo->posicaoY >= LIMITE_SUPERIOR_BANDA_SPAWN &&
+        obstaculo->posicaoY <= LIMITE_INFERIOR_BANDA_SPAWN;
 }
 
-static void GerarObstaculoNaFaixa(EstadoJogo *jogo, int faixa)
+static bool ExisteObstaculoProximoNaFaixa(const ListaObstaculos *lista, int faixa)
+{
+    if (lista == NULL) {
+        return false;
+    }
+
+    for (const Obstaculo *obstaculo = lista->inicio; obstaculo != NULL; obstaculo = obstaculo->proximo) {
+        if (obstaculo->faixa == faixa &&
+            obstaculo->posicaoY <= DISTANCIA_MINIMA_OBSTACULO_MESMA_FAIXA) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int ContarFaixasBloqueadasNaBandaSpawn(
+    const ListaObstaculos *lista,
+    const bool faixasReservadas[QUANTIDADE_FAIXAS]
+)
+{
+    bool faixasBloqueadas[QUANTIDADE_FAIXAS] = { false };
+    int quantidadeBloqueadas = 0;
+
+    for (int faixa = 0; faixa < QUANTIDADE_FAIXAS; faixa++) {
+        if (faixasReservadas != NULL && faixasReservadas[faixa]) {
+            faixasBloqueadas[faixa] = true;
+        }
+    }
+
+    if (lista != NULL) {
+        for (const Obstaculo *obstaculo = lista->inicio; obstaculo != NULL; obstaculo = obstaculo->proximo) {
+            if (obstaculo->faixa >= 0 &&
+                obstaculo->faixa < QUANTIDADE_FAIXAS &&
+                ObstaculoEstaNaBandaSpawn(obstaculo)) {
+                faixasBloqueadas[obstaculo->faixa] = true;
+            }
+        }
+    }
+
+    for (int faixa = 0; faixa < QUANTIDADE_FAIXAS; faixa++) {
+        if (faixasBloqueadas[faixa]) {
+            quantidadeBloqueadas++;
+        }
+    }
+
+    return quantidadeBloqueadas;
+}
+
+static bool FaixaPodeReceberObstaculo(
+    const ListaObstaculos *lista,
+    int faixa,
+    const bool faixasReservadas[QUANTIDADE_FAIXAS]
+)
+{
+    bool faixasComCandidata[QUANTIDADE_FAIXAS] = { false };
+
+    if (faixa < 0 || faixa >= QUANTIDADE_FAIXAS) {
+        return false;
+    }
+
+    if (ExisteObstaculoProximoNaFaixa(lista, faixa)) {
+        return false;
+    }
+
+    if (faixasReservadas != NULL) {
+        for (int i = 0; i < QUANTIDADE_FAIXAS; i++) {
+            faixasComCandidata[i] = faixasReservadas[i];
+        }
+    }
+
+    faixasComCandidata[faixa] = true;
+    return ContarFaixasBloqueadasNaBandaSpawn(lista, faixasComCandidata) < QUANTIDADE_FAIXAS;
+}
+
+static bool SortearFaixaDisponivel(
+    const ListaObstaculos *lista,
+    const bool faixasReservadas[QUANTIDADE_FAIXAS],
+    int *faixaEscolhida
+)
+{
+    int faixasDisponiveis[QUANTIDADE_FAIXAS] = { 0 };
+    int quantidadeDisponiveis = 0;
+
+    if (faixaEscolhida == NULL) {
+        return false;
+    }
+
+    for (int faixa = 0; faixa < QUANTIDADE_FAIXAS; faixa++) {
+        if (FaixaPodeReceberObstaculo(lista, faixa, faixasReservadas)) {
+            faixasDisponiveis[quantidadeDisponiveis] = faixa;
+            quantidadeDisponiveis++;
+        }
+    }
+
+    if (quantidadeDisponiveis == 0) {
+        return false;
+    }
+
+    *faixaEscolhida = faixasDisponiveis[GetRandomValue(0, quantidadeDisponiveis - 1)];
+    return true;
+}
+
+static bool GerarObstaculoNaFaixa(EstadoJogo *jogo, int faixa)
 {
     TipoObstaculo tipo = SortearTipoObstaculo(jogo);
     float aumentoPorTempo = jogo->tempoSobrevivencia * 5.0f;
@@ -85,17 +187,28 @@ static void GerarObstaculoNaFaixa(EstadoJogo *jogo, int faixa)
         aumentoPorTempo = 220.0f;
     }
 
-    AdicionarObstaculo(&jogo->obstaculos, faixa, jogo->velocidadeBase + aumentoPorTempo + variacaoVelocidade, tipo);
+    return AdicionarObstaculo(&jogo->obstaculos, faixa, jogo->velocidadeBase + aumentoPorTempo + variacaoVelocidade, tipo);
 }
 
 static void GerarObstaculosAleatorios(EstadoJogo *jogo)
 {
-    int faixaPrincipal = GetRandomValue(0, QUANTIDADE_FAIXAS - 1);
+    bool faixasReservadas[QUANTIDADE_FAIXAS] = { false };
+    int faixaPrincipal = 0;
+    int faixaExtra = 0;
 
-    GerarObstaculoNaFaixa(jogo, faixaPrincipal);
+    if (!SortearFaixaDisponivel(&jogo->obstaculos, faixasReservadas, &faixaPrincipal)) {
+        return;
+    }
 
-    if (DeveGerarObstaculoExtra(jogo)) {
-        GerarObstaculoNaFaixa(jogo, SortearFaixaDiferente(faixaPrincipal));
+    if (!GerarObstaculoNaFaixa(jogo, faixaPrincipal)) {
+        return;
+    }
+
+    faixasReservadas[faixaPrincipal] = true;
+
+    if (DeveGerarObstaculoExtra(jogo) &&
+        SortearFaixaDisponivel(&jogo->obstaculos, faixasReservadas, &faixaExtra)) {
+        GerarObstaculoNaFaixa(jogo, faixaExtra);
     }
 }
 
