@@ -100,6 +100,11 @@ static void AtualizarCaixaObstaculo(Obstaculo *obstaculo)
     };
 }
 
+static bool ObstaculoAindaPodeSerLimpo(const Obstaculo *obstaculo)
+{
+    return obstaculo != NULL && obstaculo->posicaoY <= ALTURA_JANELA;
+}
+
 static void DesenharFallbackObstaculo(const Obstaculo *obstaculo)
 {
     Color cor = (obstaculo->tipo == OBSTACULO_ONIBUS)
@@ -214,7 +219,8 @@ void AtualizarObstaculos(ListaObstaculos *lista, float delta)
         obstaculoAtual->posicaoY += obstaculoAtual->velocidade * delta;
         AtualizarCaixaObstaculo(obstaculoAtual);
 
-        if (obstaculoAtual->posicaoY > ALTURA_JANELA + 120.0f) {
+        if (obstaculoAtual->posicaoY > ALTURA_JANELA + 120.0f ||
+            obstaculoAtual->posicaoY + obstaculoAtual->altura < -120.0f) {
             *ponteiroAtual = obstaculoAtual->proximo;
             free(obstaculoAtual);
             lista->quantidade--;
@@ -255,6 +261,43 @@ bool VerificarColisaoJogadorObstaculos(const Jogador *jogador, const ListaObstac
     }
 
     return false;
+}
+
+bool RemoverPrimeiroObstaculoColidindo(ListaObstaculos *lista, const Jogador *jogador)
+{
+    if (jogador == NULL || lista == NULL) {
+        return false;
+    }
+
+    Obstaculo **ponteiroAtual = &lista->inicio;
+
+    while (*ponteiroAtual != NULL) {
+        Obstaculo *obstaculoAtual = *ponteiroAtual;
+
+        if (CheckCollisionRecs(jogador->caixaColisao, obstaculoAtual->caixaColisao)) {
+            *ponteiroAtual = obstaculoAtual->proximo;
+            free(obstaculoAtual);
+            lista->quantidade--;
+            return true;
+        }
+
+        ponteiroAtual = &obstaculoAtual->proximo;
+    }
+
+    return false;
+}
+
+void AplicarVelocidadeObstaculosFaixa(ListaObstaculos *lista, int faixa, float velocidade)
+{
+    if (lista == NULL || faixa < 0 || faixa >= QUANTIDADE_FAIXAS) {
+        return;
+    }
+
+    for (Obstaculo *obstaculo = lista->inicio; obstaculo != NULL; obstaculo = obstaculo->proximo) {
+        if (obstaculo->faixa == faixa && ObstaculoAindaPodeSerLimpo(obstaculo)) {
+            obstaculo->velocidade = velocidade;
+        }
+    }
 }
 
 void LiberarObstaculos(ListaObstaculos *lista)

@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include "config.h"
+#include "powerups.h"
 #include "raylib.h"
 
 static void DesenharFiltroChuva(void)
@@ -57,7 +58,8 @@ void DesenharHud(const EstadoJogo *jogo)
     DrawText(TextFormat("Pontos: %d", jogo->pontuacaoAtual), 30, 30, 24, RAYWHITE);
     DrawText(TextFormat("Recorde: %d", jogo->melhorPontuacao), 30, 62, 20, LIGHTGRAY);
     DrawText(TextFormat("Obstáculos: %d", jogo->obstaculos.quantidade), 30, 90, 18, LIGHTGRAY);
-    DrawText("Setas mudam de faixa | Obstáculos aparecem sozinhos", 230, 650, 18, LIGHTGRAY);
+    DesenharPowerUpGuardado(jogo);
+    DrawText("Setas mudam de faixa | Seta cima ativa power-up", 245, 650, 18, LIGHTGRAY);
 }
 
 void DesenharTelaGameOver(const EstadoJogo *jogo)
@@ -78,10 +80,12 @@ void DesenharEventos(const EstadoJogo *jogo)
 
     if (jogo->chuvaAtiva) {
         DesenharEfeitoChuva();
-        DrawText("CHUVA", 770, 30, 20, SKYBLUE);
+        DrawText("CHUVA", 680, 30, 20, SKYBLUE);
     }
 
     if (jogo->engarrafamentoAtivo) {
         DrawText("ENGARRAFAMENTO", 680, 60, 20, ORANGE);
     }
+
+    DesenharIndicadoresPowerUps(jogo);
 }

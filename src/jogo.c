@@ -9,11 +9,13 @@
 #include "obstaculos.h"
 #include "pista.h"
 #include "pontuacao.h"
+#include "powerups.h"
 #include "raylib.h"
 #include "ranking.h"
 
 static const float MULTIPLICADOR_INTERVALO_ENGARRAFAMENTO = 0.65f;
 static const float MULTIPLICADOR_VELOCIDADE_CHUVA = 1.25f;
+static const float MULTIPLICADOR_VELOCIDADE_FREIO = 0.45f;
 static const float INTERVALO_MINIMO_NORMAL = 0.32f;
 static const float INTERVALO_MINIMO_ENGARRAFAMENTO = 0.30f;
 static const float DISTANCIA_MINIMA_OBSTACULO_MESMA_FAIXA = 240.0f;
@@ -23,6 +25,11 @@ static const float LIMITE_INFERIOR_BANDA_SPAWN = 220.0f;
 static float ObterMultiplicadorVelocidadeChuva(const EstadoJogo *jogo)
 {
     return (jogo != NULL && jogo->chuvaAtiva) ? MULTIPLICADOR_VELOCIDADE_CHUVA : 1.0f;
+}
+
+static float ObterMultiplicadorVelocidadeFreio(const EstadoJogo *jogo)
+{
+    return (jogo != NULL && jogo->tempoFreio > 0.0f) ? MULTIPLICADOR_VELOCIDADE_FREIO : 1.0f;
 }
 
 static float CalcularProximoIntervaloObstaculo(const EstadoJogo *jogo)
@@ -135,6 +142,10 @@ static bool FaixaPodeReceberObstaculo(
         return false;
     }
 
+    if (faixasReservadas != NULL && faixasReservadas[faixa]) {
+        return false;
+    }
+
     if (ExisteObstaculoProximoNaFaixa(lista, faixa)) {
         return false;
     }
@@ -195,6 +206,12 @@ static void GerarObstaculosAleatorios(EstadoJogo *jogo)
     bool faixasReservadas[QUANTIDADE_FAIXAS] = { false };
     int faixaPrincipal = 0;
     int faixaExtra = 0;
+
+    if (jogo->tempoManutencao > 0.0f &&
+        jogo->faixaManutencao >= 0 &&
+        jogo->faixaManutencao < QUANTIDADE_FAIXAS) {
+        faixasReservadas[jogo->faixaManutencao] = true;
+    }
 
     if (!SortearFaixaDisponivel(&jogo->obstaculos, faixasReservadas, &faixaPrincipal)) {
         return;
@@ -260,6 +277,7 @@ void ReiniciarJogo(EstadoJogo *jogo)
     InicializarJogador(&jogo->jogador);
     InicializarPista(jogo->pistaLogica);
     InicializarPontuacao(jogo);
+    InicializarPowerUps(jogo);
 
     jogo->tempoGerarObstaculo = 0.0f;
     jogo->intervaloObstaculo = 1.0f;
@@ -275,14 +293,25 @@ void AtualizarJogo(EstadoJogo *jogo, float delta)
     }
 
     AtualizarJogador(&jogo->jogador, delta);
+    AtualizarPowerUps(jogo, delta);
     AtualizarPontuacao(jogo, delta);
     AtualizarDeslocamentoCenario(jogo, delta);
     AtualizarGeracaoObstaculos(jogo, delta);
 
-    AtualizarObstaculos(&jogo->obstaculos, delta * ObterMultiplicadorVelocidadeChuva(jogo));
+    AtualizarObstaculos(
+        &jogo->obstaculos,
+        delta * ObterMultiplicadorVelocidadeChuva(jogo) * ObterMultiplicadorVelocidadeFreio(jogo)
+    );
     AtualizarPista(jogo->pistaLogica, &jogo->jogador, &jogo->obstaculos);
 
     if (VerificarColisaoJogadorObstaculos(&jogo->jogador, &jogo->obstaculos)) {
+        if (jogo->escudoAtivo) {
+            RemoverPrimeiroObstaculoColidindo(&jogo->obstaculos, &jogo->jogador);
+            jogo->escudoAtivo = false;
+            AtualizarPista(jogo->pistaLogica, &jogo->jogador, &jogo->obstaculos);
+            return;
+        }
+
         jogo->jogoAtivo = false;
         SalvarPontuacaoSeRecorde(CAMINHO_RANKING, jogo->pontuacaoAtual);
     }
@@ -295,8 +324,11 @@ void DesenharJogo(const EstadoJogo *jogo)
     }
 
     DesenharPista(jogo->pistaLogica, jogo->deslocamentoCenario);
+    DesenharZonaManutencao(jogo);
     DesenharObstaculos(&jogo->obstaculos);
+    DesenharPowerUpColetavel(jogo);
     DesenharJogador(&jogo->jogador);
+    DesenharEscudoJogador(jogo);
     DesenharEventos(jogo);
     DesenharHud(jogo);
 }
