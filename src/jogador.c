@@ -8,8 +8,8 @@
 #define CAMINHO_SPRITE_JOGADOR "assets/veiculos/carro_jogador.png"
 #define LARGURA_SPRITE_JOGADOR 60.0f
 #define ALTURA_SPRITE_JOGADOR 90.0f
-#define VELOCIDADE_TROCA_FAIXA 864.0f
-#define ESCALA_CAIXA_COLISAO_JOGADOR 0.80f
+#define VELOCIDADE_TROCA_FAIXA 993.6f
+#define ESCALA_CAIXA_COLISAO_JOGADOR 0.64f
 
 static Texture2D texturaJogador = { 0 };
 
