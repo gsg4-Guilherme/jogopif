@@ -11,8 +11,9 @@
 #define TAMANHO_SLOT_POWERUP 56.0f
 #define TEMPO_FREIO 5.0f
 #define TEMPO_DOBRO_PONTOS 6.0f
-#define TEMPO_MANUTENCAO 12.0f
+#define TEMPO_MANUTENCAO 10.0f
 #define VELOCIDADE_LIMPA_FAIXA -420.0f
+#define MULTIPLICADOR_CHANCE_POWERUP_MANUTENCAO 1.70f
 
 static const float LIMITE_SUPERIOR_SPAWN_POWERUP = -160.0f;
 static const float LIMITE_INFERIOR_SPAWN_POWERUP = 180.0f;
@@ -55,9 +56,20 @@ static Color ObterCorPowerUp(TipoPowerUp tipo)
     }
 }
 
-static float SortearIntervaloPowerUp(void)
+static bool ManutencaoAtiva(const EstadoJogo *jogo)
 {
-    return 6.5f + ((float)GetRandomValue(0, 450) / 100.0f);
+    return jogo != NULL && jogo->tempoManutencao > 0.0f;
+}
+
+static float SortearIntervaloPowerUp(const EstadoJogo *jogo)
+{
+    float intervalo = 6.5f + ((float)GetRandomValue(0, 450) / 100.0f);
+
+    if (ManutencaoAtiva(jogo)) {
+        intervalo /= MULTIPLICADOR_CHANCE_POWERUP_MANUTENCAO;
+    }
+
+    return intervalo;
 }
 
 static TipoPowerUp SortearTipoPowerUp(void)
@@ -212,7 +224,7 @@ static void AtivarPowerUpGuardado(EstadoJogo *jogo)
 
     jogo->powerUpGuardado = POWERUP_NENHUM;
     jogo->tempoGerarPowerUp = 0.0f;
-    jogo->intervaloPowerUp = SortearIntervaloPowerUp();
+    jogo->intervaloPowerUp = SortearIntervaloPowerUp(jogo);
 }
 
 static void AtualizarTemporizadoresPowerUps(EstadoJogo *jogo, float delta)
@@ -259,7 +271,7 @@ static void AtualizarPowerUpColetavel(EstadoJogo *jogo, float delta)
     if (jogo->powerUpColetavel.posicaoY > ALTURA_JANELA + TAMANHO_POWERUP) {
         DesativarPowerUpColetavel(jogo);
         jogo->tempoGerarPowerUp = 0.0f;
-        jogo->intervaloPowerUp = SortearIntervaloPowerUp();
+        jogo->intervaloPowerUp = SortearIntervaloPowerUp(jogo);
         return;
     }
 
@@ -284,7 +296,7 @@ static void AtualizarGeracaoPowerUp(EstadoJogo *jogo, float delta)
     if (jogo->tempoGerarPowerUp >= jogo->intervaloPowerUp) {
         CriarPowerUpColetavel(jogo);
         jogo->tempoGerarPowerUp = 0.0f;
-        jogo->intervaloPowerUp = SortearIntervaloPowerUp();
+        jogo->intervaloPowerUp = SortearIntervaloPowerUp(jogo);
     }
 }
 
@@ -318,8 +330,6 @@ void InicializarPowerUps(EstadoJogo *jogo)
         return;
     }
 
-    jogo->tempoGerarPowerUp = 0.0f;
-    jogo->intervaloPowerUp = SortearIntervaloPowerUp();
     jogo->tempoFreio = 0.0f;
     jogo->tempoDobroPontos = 0.0f;
     jogo->tempoManutencao = 0.0f;
@@ -327,6 +337,8 @@ void InicializarPowerUps(EstadoJogo *jogo)
     jogo->faixaManutencao = -1;
     jogo->powerUpGuardado = POWERUP_NENHUM;
     jogo->escudoAtivo = false;
+    jogo->tempoGerarPowerUp = 0.0f;
+    jogo->intervaloPowerUp = SortearIntervaloPowerUp(jogo);
     DesativarPowerUpColetavel(jogo);
 }
 

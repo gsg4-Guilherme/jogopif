@@ -8,8 +8,54 @@
 #define CAMINHO_SPRITE_JOGADOR "assets/veiculos/carro_jogador.png"
 #define LARGURA_SPRITE_JOGADOR 60.0f
 #define ALTURA_SPRITE_JOGADOR 90.0f
+#define VELOCIDADE_TROCA_FAIXA 864.0f
+#define ESCALA_CAIXA_COLISAO_JOGADOR 0.80f
 
 static Texture2D texturaJogador = { 0 };
+
+static Rectangle ObterRetanguloVisualJogador(const Jogador *jogador)
+{
+    if (jogador == NULL) {
+        return (Rectangle){ 0 };
+    }
+
+    return (Rectangle){
+        jogador->posicaoX,
+        jogador->posicaoY,
+        jogador->largura,
+        jogador->altura
+    };
+}
+
+static void AtualizarCaixaColisaoJogador(Jogador *jogador)
+{
+    float larguraColisao = 0.0f;
+    float alturaColisao = 0.0f;
+
+    if (jogador == NULL) {
+        return;
+    }
+
+    larguraColisao = jogador->largura * ESCALA_CAIXA_COLISAO_JOGADOR;
+    alturaColisao = jogador->altura * ESCALA_CAIXA_COLISAO_JOGADOR;
+    jogador->caixaColisao = (Rectangle){
+        jogador->posicaoX + ((jogador->largura - larguraColisao) / 2.0f),
+        jogador->posicaoY + ((jogador->altura - alturaColisao) / 2.0f),
+        larguraColisao,
+        alturaColisao
+    };
+}
+
+static float MoverValorAte(float valorAtual, float valorDestino, float passoMaximo)
+{
+    float diferenca = valorDestino - valorAtual;
+
+    if (diferenca > -passoMaximo && diferenca < passoMaximo) {
+        return valorDestino;
+    }
+
+    return valorAtual + (diferenca > 0.0f ? passoMaximo : -passoMaximo);
+}
 
 float CalcularCentroFaixa(int faixa)
 {
@@ -46,26 +92,22 @@ void InicializarJogador(Jogador *jogador)
     jogador->faixaAtual = QUANTIDADE_FAIXAS / 2;
     jogador->largura = LARGURA_SPRITE_JOGADOR;
     jogador->altura = ALTURA_SPRITE_JOGADOR;
-    jogador->velocidadeLateral = 0.0f;
+    jogador->velocidadeLateral = VELOCIDADE_TROCA_FAIXA;
     jogador->posicaoX = CalcularCentroFaixa(jogador->faixaAtual) - (jogador->largura / 2.0f);
     jogador->posicaoY = ALTURA_JANELA - 130.0f;
-    jogador->caixaColisao = (Rectangle){
-        jogador->posicaoX,
-        jogador->posicaoY,
-        jogador->largura,
-        jogador->altura
-    };
+    AtualizarCaixaColisaoJogador(jogador);
 }
 
 void AtualizarJogador(Jogador *jogador, float delta)
 {
-    (void)delta;
+    float destinoX = 0.0f;
+    float passoMaximo = 0.0f;
 
     if (jogador == NULL) {
         return;
     }
 
-    // As setas mudam de faixa. Depois, o grupo pode suavizar o movimento com interpolação.
+    // As setas escolhem a faixa-alvo; a posicao horizontal chega nela aos poucos.
     if (IsKeyPressed(KEY_LEFT) && jogador->faixaAtual > 0) {
         jogador->faixaAtual--;
     }
@@ -74,24 +116,29 @@ void AtualizarJogador(Jogador *jogador, float delta)
         jogador->faixaAtual++;
     }
 
-    jogador->posicaoX = CalcularCentroFaixa(jogador->faixaAtual) - (jogador->largura / 2.0f);
-    jogador->caixaColisao.x = jogador->posicaoX;
-    jogador->caixaColisao.y = jogador->posicaoY;
+    destinoX = CalcularCentroFaixa(jogador->faixaAtual) - (jogador->largura / 2.0f);
+    passoMaximo = jogador->velocidadeLateral * delta;
+    jogador->posicaoX = MoverValorAte(jogador->posicaoX, destinoX, passoMaximo);
+    AtualizarCaixaColisaoJogador(jogador);
 }
 
 void DesenharJogador(const Jogador *jogador)
 {
+    Rectangle retanguloVisual = { 0 };
+
     if (jogador == NULL) {
         return;
     }
 
+    retanguloVisual = ObterRetanguloVisualJogador(jogador);
+
     if (IsTextureValid(texturaJogador)) {
         Rectangle origem = { 0.0f, 0.0f, (float)texturaJogador.width, (float)texturaJogador.height };
-        DrawTexturePro(texturaJogador, origem, jogador->caixaColisao, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+        DrawTexturePro(texturaJogador, origem, retanguloVisual, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         return;
     }
 
-    DrawRectangleRounded(jogador->caixaColisao, 0.18f, 6, (Color){ 40, 130, 220, 255 });
-    DrawRectangleLinesEx(jogador->caixaColisao, 2.0f, RAYWHITE);
+    DrawRectangleRounded(retanguloVisual, 0.18f, 6, (Color){ 40, 130, 220, 255 });
+    DrawRectangleLinesEx(retanguloVisual, 2.0f, RAYWHITE);
     DrawText("CARRO", (int)jogador->posicaoX + 2, (int)jogador->posicaoY + 34, 14, RAYWHITE);
 }
